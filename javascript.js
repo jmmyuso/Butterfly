@@ -68,7 +68,7 @@ const escenarios = [
     {
         nombre: "Casa de Lara (Pasillo)",
         bg: "#2d3436",
-        imagenSrc: "", // <-- PON AQUÍ TU IMAGEN
+        imagenSrc: "images/salonlara.png", // <-- Imagen añadida aquí
         tipo: "jugable",
         inicio: { x: 50, y: 300 },
         salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
