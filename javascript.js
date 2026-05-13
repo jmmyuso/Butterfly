@@ -26,8 +26,10 @@ let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 3, im
 jugador.imagen.src = "images/lara.png"; // <--- Aquí pones el nombre de tu imagen
 
 // Reemplazado: Lucky ahora tiene una imagen y tamaño mayor
-let lucky = { x: 30, y: 320, w: 120, h: 120, color: "#d35400", nombre: "Lucky", activo: true, imagen: new Image() };
+let lucky = { x: 30, y: 320, w: 64, h: 64, color: "#d35400", nombre: "Lucky", activo: true, imagen: new Image() };
 lucky.imagen.src = "images/lucky.png";
+let imagenTitulo = new Image();
+imagenTitulo.src = "images/maintitle.png";
 
 // SISTEMA DE DIÁLOGO AVANZADO
 let npcActual = null;
@@ -41,7 +43,7 @@ const escenarios = [
     {
         nombre: "Cuarto de Lara",
         bg: "#1e272e",
-        imagenSrc: "", // <-- PON AQUÍ TU IMAGEN (Ej: "img/cuarto.jpg")
+        imagenSrc: "images/cuartolara.jpeg", // fondo del cuarto de Lara
         tipo: "jugable",
         inicio: { x: 50, y: 300 },
         salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
@@ -94,6 +96,7 @@ const escenarios = [
         npcs: [
             { 
                 x: 300, y: 300, w: 40, h: 40, color: "#8e44ad", nombre: "Akuma", 
+                imagenSrc: "images/akuma.png",
                 dialogo: [
                     "(Cantando la misma nota sostenida, una y otra vez sin respirar)...", 
                     "Lara, mi amor... mi voz no hace eco en esta calle. Siento que llevo horas cantando y el aire no se mueve."
@@ -331,7 +334,7 @@ function cargarNivel(indice) {
     if (indice >= escenarios.length) return;
     nivelActual = indice;
     const nivel = escenarios[nivelActual];
-    document.querySelector("h2").innerText = `La Mariposa Perdida - ${nivel.nombre}`;
+    document.querySelector("h2").innerText = `Efecto Mariposa - ${nivel.nombre}`;
 
     // marcar controlable sólo cuando cargue el nivel
     jugador.controlable = false;
@@ -694,23 +697,45 @@ function dibujar() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (estadoJuego === "MENU") {
+        // Fondo oscuro (se usará como fallback si la imagen no carga)
         ctx.fillStyle = "#0d1117";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = "#bdc3c7";
-        ctx.font = "bold 40px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("LA MARIPOSA PERDIDA", canvas.width/2, 200);
-        ctx.font = "20px Arial";
-        ctx.fillStyle = "#7f8c8d";
-        ctx.fillText("El silencio de Pino Montano", canvas.width/2, 240);
-        
+
+        // --- Fondo imagen (cover) ---
+        if (imagenTitulo && imagenTitulo.complete && imagenTitulo.naturalWidth) {
+            const iw = imagenTitulo.naturalWidth;
+            const ih = imagenTitulo.naturalHeight;
+            const scale = Math.max(canvas.width / iw, canvas.height / ih);
+            const sw = canvas.width / scale;
+            const sh = canvas.height / scale;
+            const sx = Math.max(0, Math.floor((iw - sw) / 2));
+            const sy = Math.max(0, Math.floor((ih - sh) / 2));
+            ctx.drawImage(imagenTitulo, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(0,0,0,0.35)";
+            ctx.fillRect(0, canvas.height * 0.65, canvas.width, canvas.height * 0.35);
+        }
+
+        // TÍTULO ELEGANTE
         ctx.fillStyle = "white";
-        ctx.font = "24px Arial";
-        ctx.fillText((opcionMenu === 0 ? "► " : "") + "INICIAR HISTORIA", canvas.width/2, 350);
-        ctx.fillText((opcionMenu === 1 ? "► " : "") + "SALIR", canvas.width/2, 400);
-        
-        ctx.textAlign = "left"; 
+        ctx.textAlign = "center";
+        // usar la fuente elegida (Playfair Display); tamaño aumentado
+        ctx.font = "700 56px 'Playfair Display', serif";
+        // sombra sutil para elegancia y legibilidad
+        ctx.shadowColor = "rgba(0,0,0,0.55)";
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 6;
+        ctx.fillText("EFECTO MARIPOSA", canvas.width / 2, canvas.height * 0.72);
+        // reset sombra para el resto del texto
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+
+        // Opciones de menú (más discretas)
+        ctx.font = "18px Arial";
+        ctx.fillStyle = "rgba(255,255,255,0.95)";
+        ctx.fillText((opcionMenu === 0 ? "> " : "") + "INICIAR HISTORIA", canvas.width / 2, canvas.height * 0.80);
+        ctx.fillText((opcionMenu === 1 ? "> " : "") + "SALIR", canvas.width / 2, canvas.height * 0.86);
+
+        ctx.textAlign = "left";
         return;
     }
 
