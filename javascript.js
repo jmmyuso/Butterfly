@@ -19,9 +19,10 @@ let estadoJuego = "MENU";
 let opcionMenu = 0; 
 let tiempoIntro = 0;
 let teclaEspacioPulsada = false;
+let teclaBackPulsada = false; // nueva bandera para evitar repetición con Backspace
 
 // ENTIDADES GLOBALES
-let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 5, imagen: new Image() };
+let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 3, imagen: new Image() }; // velocidad reducida (antes 5)
 jugador.imagen.src = "images/lara.png"; // <--- Aquí pones el nombre de tu imagen
 let lucky = { x: 30, y: 320, w: 20, h: 20, color: "#d35400", nombre: "Lucky", activo: true };
 
@@ -122,6 +123,7 @@ const escenarios = [
         tipo: "jugable",
         inicio: { x: 50, y: 300 },
         salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
+        entrada: { x: 0, y: 250, w: 50, h: 100, color: "#e74c3c" }, // ejemplo: colisiona a la izquierda para volver atrás
         muebles: [],
         npcs: [
             { 
@@ -237,7 +239,7 @@ const escenarios = [
    {
         nombre: "Cuarto de Yuso",
         bg: "#111", 
-        imagenSrc: "images/cuarto_yuso_fondo.jpg", // <--- Asegúrate de que el nombre sea correcto
+        imagenSrc: "images/cuarto.png", // <-- cambia a tu archivo cuarto.png
         tipo: "jugable",
         inicio: { x: 50, y: 300 },
         salida: null, 
@@ -247,7 +249,7 @@ const escenarios = [
         npcs: [
             { 
                 x: 120, y: 200, w: 80, h: 120, color: "#3498db", nombre: "Yuso", 
-                imagenSrc: "images/yuso.png", 
+                imagenSrc: "images/yuso.png", solido: false, 
                 dialogo: [
                     "Pasa, Lara. Siéntate si quieres. ¿Te has fijado en que hoy no ha amanecido?", 
                     "Todo está paralizado. La gente, la brisa, el polvo en el aire. Tu mariposa era la única chispa que nos quedaba.",
@@ -256,14 +258,14 @@ const escenarios = [
             },
             { 
                 x: 280, y: 200, w: 80, h: 120, color: "#e67e22", nombre: "Guille", 
-                imagenSrc: "images/guille.png",
+                imagenSrc: "images/guille.png", solido: false,
                 dialogo: [
                     "Lucky es el único que parece entenderlo. Mírale. Le ladra a cosas que nosotros no logramos ver.",
                     "No te vayas, Lara. Quédate aquí. Al menos en la quietud no pasa nada malo."
                 ] 
             },
             { 
-                x: 450, y: 400, w: 40, h: 40, color: "#d35400", nombre: "Lucky (El Perro)", 
+                x: 450, y: 400, w: 40, h: 40, color: "#d35400", nombre: "Lucky (El Perro)", solido: false,
                 dialogo: [
                     "¡GUAU! ¡GUAU! (Lucky gimotea y rasca el suelo con fuerza, como si intentara cavar una salida hacia un lugar donde el tiempo fluya con normalidad).",
                     "La habitación se queda en un silencio absoluto... (Fin de la historia)."
@@ -274,7 +276,6 @@ const escenarios = [
     }
 ];
 
-
 // =======================================================
 // PRECARGA DE IMÁGENES (FONDOS Y NPCs)
 // =======================================================
@@ -282,13 +283,23 @@ escenarios.forEach(nivel => {
     // Cargar fondo del nivel
     if (nivel.imagenSrc && nivel.imagenSrc !== "") {
         nivel.objImagen = new Image();
+        nivel.imagenCargada = false;
+        nivel.objImagen.onload = () => { nivel.imagenCargada = true; console.log("Fondo cargado:", nivel.imagenSrc); };
+        nivel.objImagen.onerror = () => { console.warn("No se pudo cargar fondo:", nivel.imagenSrc); nivel.imagenCargada = false; };
         nivel.objImagen.src = nivel.imagenSrc;
     }
-    // Cargar imágenes de NPCs
+    // Cargar imágenes de NPCs y normalizar propiedades por defecto
     if (nivel.npcs) {
         nivel.npcs.forEach(npc => {
+            if (npc.solido === undefined) npc.solido = true;         // por defecto sólidos salvo que se diga lo contrario
+            if (npc.interactuable === undefined) npc.interactuable = true; // se puede hablar por defecto
+            if (npc.seguir === undefined) npc.seguir = false;
+
             if (npc.imagenSrc && npc.imagenSrc !== "") {
                 npc.objImagen = new Image();
+                npc.imagenCargada = false;
+                npc.objImagen.onload = () => { npc.imagenCargada = true; };
+                npc.objImagen.onerror = () => { console.warn("No se pudo cargar NPC:", npc.imagenSrc); npc.imagenCargada = false; };
                 npc.objImagen.src = npc.imagenSrc;
             }
         });
@@ -310,14 +321,51 @@ function cargarNivel(indice) {
     nivelActual = indice;
     const nivel = escenarios[nivelActual];
     document.querySelector("h2").innerText = `La Mariposa Perdida - ${nivel.nombre}`;
+
+    // marcar controlable sólo cuando cargue el nivel
+    jugador.controlable = false;
     
     if (nivel.tipo === "jugable") {
+        // si la imagen ya estaba en caché y completa, marcarla como cargada para que se vea inmediatamente
+        if (nivel.objImagen && nivel.objImagen.complete) nivel.imagenCargada = true;
+
         jugador.x = nivel.inicio.x;
         jugador.y = nivel.inicio.y;
         estadoJuego = "JUGANDO";
         lucky.x = jugador.x - 30;
         lucky.y = jugador.y + 20;
 
+        // Asegurar que Lara no aparezca solapada con muebles o NPCs sólidos:
+        let encontrado = intentarMovimiento(jugador.x, jugador.y);
+        if (!encontrado) {
+            const paso = 10;
+            for (let yy = 0; yy <= canvas.height - jugador.h; yy += paso) {
+                let roto = false;
+                for (let xx = 0; xx <= canvas.width - jugador.w; xx += paso) {
+                    if (intentarMovimiento(xx, yy)) {
+                        jugador.x = xx;
+                        jugador.y = yy;
+                        encontrado = true;
+                        roto = true;
+                        break;
+                    }
+                }
+                if (roto) break;
+            }
+        }
+        if (!encontrado) {
+            let intentos = 0;
+            while (!intentarMovimiento(jugador.x, jugador.y) && intentos < 100) {
+                jugador.x = Math.max(0, jugador.x - 5);
+                jugador.y = Math.max(0, jugador.y - 5);
+                intentos++;
+            }
+        }
+
+        // permitir control tras breve retardo para evitar que inputs previos queden pegados
+        setTimeout(() => { jugador.controlable = true; }, 50);
+
+        console.log(`Cargado nivel ${nivel.nombre}. imagenCargada=${nivel.imagenCargada}, npcs=${nivel.npcs ? nivel.npcs.map(n=>n.nombre).join(",") : ""}`);
     } else if (nivel.tipo === "cinematica") {
         estadoJuego = "CINEMATICA";
         tiempoCinematica = nivel.duracion * 60;
@@ -338,7 +386,15 @@ function intentarMovimiento(nuevaX, nuevaY) {
     const hitboxJugador = { x: nuevaX, y: nuevaY, w: jugador.w, h: jugador.h };
     if (nuevaX < 0 || nuevaX + jugador.w > canvas.width || nuevaY < 0 || nuevaY + jugador.h > canvas.height) return false;
     for (let mueble of nivel.muebles) { if (hayColision(hitboxJugador, mueble)) return false; }
-    for (let npc of nivel.npcs) { if (hayColision(hitboxJugador, npc)) return false; }
+    // Sólo considerar NPCs "sólidos" para bloqueo de movimiento (por defecto si no existe la propiedad, se considera sólido)
+    if (nivel.npcs) {
+        for (let npc of nivel.npcs) {
+            // NO bloquear si el NPC está marcado como no sólido o si está siguiendo a Lara
+            if (npc.solido === false) continue;
+            if (npc.seguir) continue;
+            if (hayColision(hitboxJugador, npc)) return false;
+        }
+    }
     return true;
 }
 
@@ -373,6 +429,12 @@ function cerrarDialogo() {
     enDialogo = false;
     enOpciones = false;
     cajaDialogo.style.display = "none";
+
+    // Si el diálogo que se cierra es de Guille, hacer que empiece a seguir a Lara
+    if (npcActual && npcActual.nombre === "Guille") {
+        npcActual.seguir = true;
+    }
+
     npcActual = null;
 }
 
@@ -506,9 +568,45 @@ function actualizar() {
             }
         }
 
+        // Movimiento de NPCs que siguen a Lara (Yuso y/o Guille)
+        if (nivel.npcs) {
+            for (let npc of nivel.npcs) {
+                if (npc.seguir) {
+                    let dxN = jugador.x - npc.x;
+                    let dyN = jugador.y - npc.y;
+                    let distN = Math.hypot(dxN, dyN);
+                    let velocidadNpc = Math.max(0.6, jugador.velocidad * 0.6); // velocidad relativa
+                    let distanciaObjetivo = 70; // distancia a la que se mantienen de Lara
+                    if (distN > distanciaObjetivo) {
+                        npc.x += (dxN / distN) * velocidadNpc;
+                        npc.y += (dyN / distN) * velocidadNpc;
+                    } else if (distN < 40 && distN > 0) {
+                        // si se acercan demasiado, retroceden ligeramente para evitar solape extremo
+                        npc.x -= (dxN / distN) * 0.3;
+                        npc.y -= (dyN / distN) * 0.3;
+                    }
+                }
+            }
+        }
+
         if (nivel.salida && hayColision(jugador, nivel.salida)) {
             cargarNivel(nivelActual + 1);
             return;
+        }
+        // Si el nivel define una "entrada", colisionar con ella vuelve al nivel anterior
+        if (nivel.entrada && hayColision(jugador, nivel.entrada)) {
+            if (nivelActual > 0) cargarNivel(Math.max(0, nivelActual - 1));
+            return;
+        }
+        // Permitir volver manualmente con Backspace al nivel anterior
+        if (!enDialogo) {
+            if (teclas["Backspace"] && !teclaBackPulsada) {
+                teclaBackPulsada = true;
+                if (nivelActual > 0) cargarNivel(Math.max(0, nivelActual - 1));
+                return;
+            } else if (!teclas["Backspace"]) {
+                teclaBackPulsada = false;
+            }
         }
 
         if (teclas[" "] && !teclaEspacioPulsada) {
@@ -522,7 +620,12 @@ function actualizar() {
                     indiceDialogo = 0;
                     cajaDialogo.style.display = "block";
                     nombreDialogo.innerText = npc.nombre;
-                    
+
+                    // Yuso se une a Lara en cuanto hablas con él
+                    if (npc.nombre === "Yuso") {
+                        npc.seguir = true;
+                    }
+
                     let primerNodo = npc.dialogo[0];
                     if (typeof primerNodo === "string") {
                         textoDialogo.innerHTML = primerNodo;
@@ -608,12 +711,21 @@ function dibujar() {
 
     const nivel = escenarios[nivelActual];
 
-    // 1. DIBUJAR EL FONDO
-    if (nivel.objImagen && nivel.objImagen.complete && nivel.objImagen.naturalWidth !== 0) {
+    // 1. DIBUJAR EL FONDO (usar la bandera de carga)
+    if (nivel.objImagen && nivel.imagenCargada) {
         ctx.drawImage(nivel.objImagen, 0, 0, canvas.width, canvas.height);
     } else {
-        ctx.fillStyle = nivel.bg;
+        // Si no hay imagen cargada, dibuja el color de fondo (evita quedarse todo negro si no se carga la imagen)
+        ctx.fillStyle = nivel.bg || "#222";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Si existe imagenSrc pero aún no cargó, opcionalmente se puede mostrar un indicador
+        if (nivel.imagenSrc && !nivel.imagenCargada) {
+            ctx.fillStyle = "#888";
+            ctx.font = "12px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("Cargando fondo...", canvas.width/2, canvas.height - 20);
+            ctx.textAlign = "left";
+        }
     }
 
     if (estadoJuego === "CINEMATICA") {
@@ -634,6 +746,11 @@ function dibujar() {
     if (nivel.salida) {
         ctx.fillStyle = nivel.salida.color;
         ctx.fillRect(nivel.salida.x, nivel.salida.y, nivel.salida.w, nivel.salida.h);
+    }
+    // Dibujar entrada (si existe) para volver al escenario anterior
+    if (nivel.entrada) {
+        ctx.fillStyle = nivel.entrada.color || "#e74c3c";
+        ctx.fillRect(nivel.entrada.x, nivel.entrada.y, nivel.entrada.w, nivel.entrada.h);
     }
 
     for (let mueble of nivel.muebles) {
