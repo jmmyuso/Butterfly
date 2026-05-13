@@ -144,19 +144,17 @@ const escenarios = [
         entrada: { x: 0, y: 250, w: 50, h: 100, color: "#e74c3c" }, // ejemplo: colisiona a la izquierda para volver atrás
         muebles: [],
         npcs: [
-            { 
-                x: 400, y: 300, w: 40, h: 40, color: "#e74c3c", nombre: "Gitanillo", 
+            
+              { 
+                x: 400, y: 300, 
+                w: 80, h: 120, // Lo hacemos del tamaño de Lara
+                color: "#e74c3c", 
+                nombre: "Gitanillo",
+                imagenSrc: "images/gitanillo.png", // <--- Añadida la imagen
                 dialogo: [
                     "Eh, niña. Dame un euro, ¿no?",
-                    {
-                        texto: "¿Le das un euro?",
-                        opciones: [
-                            { texto: "Sí, ten un euro.", siguiente: 2 },
-                            { texto: "No tengo suelto ahora mismo.", siguiente: 3 }
-                        ]
-                    },
-                    "Gracias. Ten cuidado ahí dentro... la gente entra a la estación, pero sus sombras se quedan fuera. (Fin)",
-                    "Pues tú sabrás. Se nota en el aire. El que entra ahí no vuelve a ser el mismo. (Fin)"
+                    "Gracias. Ten cuidado... la gente entra a la estación, pero sus sombras se quedan fuera.",
+                    "Se nota en el aire. El que entra ahí no vuelve a ser el mismo."
                 ] 
             }
         ],
