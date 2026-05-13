@@ -26,7 +26,7 @@ let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 3, im
 jugador.imagen.src = "images/lara.png"; // <--- Aquí pones el nombre de tu imagen
 
 // Reemplazado: Lucky ahora tiene una imagen y tamaño mayor
-let lucky = { x: 30, y: 320, w: 64, h: 64, color: "#d35400", nombre: "Lucky", activo: true, imagen: new Image() };
+let lucky = { x: 30, y: 320, w: 120, h: 120, color: "#d35400", nombre: "Lucky", activo: true, imagen: new Image() };
 lucky.imagen.src = "images/lucky.png";
 let imagenTitulo = new Image();
 imagenTitulo.src = "images/maintitle.png";
@@ -94,12 +94,17 @@ const escenarios = [
         salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
         muebles: [ { x: 300, y: 100, w: 40, h: 40, color: "rgba(241, 196, 15, 0.5)" }, { x: 600, y: 450, w: 40, h: 40, color: "rgba(241, 196, 15, 0.5)" } ],
         npcs: [
-            { 
-                x: 300, y: 300, w: 40, h: 40, color: "#8e44ad", nombre: "Akuma", 
-                imagenSrc: "images/akuma.png",
+          { 
+                x: 550, 
+                y: 270,        // Bajamos el número de Y para que sus pies sigan tocando el suelo (al ser más alto)
+                w: 100,        // Un poco más ancho que Lara (80)
+                h: 150,        // Más alto que Lara (120)
+                color: "#c0392b", 
+                nombre: "Akuma", 
+                imagenSrc: "images/akuma.png", 
                 dialogo: [
-                    "(Cantando la misma nota sostenida, una y otra vez sin respirar)...", 
-                    "Lara, mi amor... mi voz no hace eco en esta calle. Siento que llevo horas cantando y el aire no se mueve."
+                    "El aura de este lugar ha cambiado, Lara.",
+                    "La mariposa no se ha ido, ha sido consumida por el silencio."
                 ] 
             },
             { 
