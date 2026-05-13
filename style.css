@@ -1,0 +1,49 @@
+body {
+    margin: 0;
+    background: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    font-family: sans-serif;
+    padding-top: 20px;
+}
+
+.instrucciones {
+    margin-bottom: 20px;
+    color: #bdc3c7;
+}
+
+#game-container {
+    position: relative; /* Para poder colocar el diálogo encima del canvas */
+}
+
+#juegoCanvas {
+    border: 4px solid #4682b4;
+    background: #2c3e50;
+    display: block;
+}
+
+#cajaDialogo {
+    width: 760px;
+    height: 120px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid white;
+    position: absolute;
+    bottom: 20px; 
+    left: 20px;
+    padding: 10px;
+    display: none; /* Oculto hasta que hablas con alguien */
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+#nombreDialogo {
+    margin: 0 0 10px 0;
+    color: #ffdd57;
+}
+
+#textoDialogo {
+    margin: 0;
+    font-size: 18px;
+}
