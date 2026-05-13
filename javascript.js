@@ -174,8 +174,12 @@ const escenarios = [
                 imagenSrc: "images/morillo.png",
                 dialogo: ["Llevo esperando el tren de las 9:24 desde ayer. Te juro que he visto el sol salir dos veces, pero el reloj sigue igual."] 
             },
-            { 
-                x: 500, y: 400, w: 40, h: 40, color: "#e84393", nombre: "La Missyaoi", 
+           { 
+                x: 500, y: 300, 
+                w: 80, h: 120, // Tamaño ajustado para que coincida con Lara
+                color: "#e84393", 
+                nombre: "La Missyaoi", 
+                imagenSrc: "images/missyaoi.png", // <--- Vinculamos la imagen
                 dialogo: ["El aire pesa muchísimo en este andén. Mira mi pelo, ni siquiera se mueve con el viento del túnel."] 
             }
         ],
