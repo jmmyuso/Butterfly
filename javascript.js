@@ -74,8 +74,12 @@ const escenarios = [
         salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
         muebles: [ { x: 200, y: 400, w: 400, h: 50, color: "rgba(17, 17, 17, 0.5)" } ],
         npcs: [
-            { 
-                x: 400, y: 250, w: 40, h: 40, color: "#b2bec3", nombre: "Mamá", 
+           { 
+                x: 400, y: 250, 
+                w: 80, h: 120, // Aumentado para que se vea bien la imagen
+                color: "#b2bec3", 
+                nombre: "Mamá", 
+                imagenSrc: "images/madrelara.png", // <--- Imagen añadida aquí
                 dialogo: [
                     "Lara, la cena estará lista en... no recuerdo qué te iba a decir.",
                     "Qué extraño, últimamente pierdo el hilo de mis pensamientos. Hay un silencio muy pesado en la casa hoy.",
