@@ -22,7 +22,7 @@ let teclaEspacioPulsada = false;
 let teclaBackPulsada = false; // nueva bandera para evitar repetición con Backspace
 
 // ENTIDADES GLOBALES
-let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 3, imagen: new Image() }; // velocidad reducida (antes 5)
+let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 1, imagen: new Image() }; // velocidad reducida (antes 5)
 jugador.imagen.src = "images/lara.png"; // <--- Aquí pones el nombre de tu imagen
 
 // Reemplazado: Lucky ahora tiene una imagen y tamaño mayor
