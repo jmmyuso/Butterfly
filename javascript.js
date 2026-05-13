@@ -1,0 +1,707 @@
+// ============================================================================
+// MOTOR RPG 2D MULTI-NIVEL - LA MARIPOSA PERDIDA (MISTERIO EXISTENCIAL + IMÁGENES)
+// ============================================================================
+
+const canvas = document.getElementById("juegoCanvas");
+const ctx = canvas.getContext("2d");
+
+const cajaDialogo = document.getElementById("cajaDialogo");
+const nombreDialogo = document.getElementById("nombreDialogo");
+const textoDialogo = document.getElementById("textoDialogo");
+
+// CONTROLES
+let teclas = {};
+window.addEventListener("keydown", (e) => { teclas[e.key] = true; });
+window.addEventListener("keyup", (e) => { teclas[e.key] = false; });
+
+// ESTADOS DEL JUEGO
+let estadoJuego = "MENU";
+let opcionMenu = 0; 
+let tiempoIntro = 0;
+let teclaEspacioPulsada = false;
+
+// ENTIDADES GLOBALES
+let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 5, imagen: new Image() };
+jugador.imagen.src = "images/lara.png"; // <--- Aquí pones el nombre de tu imagen
+let lucky = { x: 30, y: 320, w: 20, h: 20, color: "#d35400", nombre: "Lucky", activo: true };
+
+// SISTEMA DE DIÁLOGO AVANZADO
+let npcActual = null;
+let indiceDialogo = 0;
+let enDialogo = false;
+let enOpciones = false;
+let opcionSeleccionada = 0;
+
+// DATOS DE LOS ESCENARIOS
+const escenarios = [
+    {
+        nombre: "Cuarto de Lara",
+        bg: "#1e272e",
+        imagenSrc: "", // <-- PON AQUÍ TU IMAGEN (Ej: "img/cuarto.jpg")
+        tipo: "jugable",
+        inicio: { x: 50, y: 300 },
+        salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
+        muebles: [
+            { x: 50, y: 50, w: 200, h: 100, color: "rgba(44, 62, 80, 0.5)" },
+            { x: 500, y: 50, w: 100, h: 50, color: "rgba(52, 73, 94, 0.5)" }
+        ],
+        npcs: [
+            { 
+                x: 520, y: 120, w: 30, h: 30, color: "rgba(255,255,255,0.2)", nombre: "Tarro Vacío", 
+                dialogo: [
+                    "El cristal está intacto, pero la mariposa no está.", 
+                    "Es como si se hubiera evaporado en el aire. No tiene sentido.", 
+                    "Lucky lleva 20 minutos ladrándole a esa esquina vacía del cuarto."
+                ] 
+            }
+        ],
+        objetos: [
+            { x: 300, y: 400, w: 15, h: 15, color: "#95a5a6", nombre: "Reloj Parado", recogido: false, texto: "El segundero tiembla intentando avanzar, pero vuelve hacia atrás. El tiempo parece haberse estancado." }
+        ]
+    },
+    {
+        nombre: "Casa de Lara (Pasillo)",
+        bg: "#2d3436",
+        imagenSrc: "", // <-- PON AQUÍ TU IMAGEN
+        tipo: "jugable",
+        inicio: { x: 50, y: 300 },
+        salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
+        muebles: [ { x: 200, y: 400, w: 400, h: 50, color: "rgba(17, 17, 17, 0.5)" } ],
+        npcs: [
+            { 
+                x: 400, y: 250, w: 40, h: 40, color: "#b2bec3", nombre: "Mamá", 
+                dialogo: [
+                    "Lara, la cena estará lista en... no recuerdo qué te iba a decir.",
+                    "Qué extraño, últimamente pierdo el hilo de mis pensamientos. Hay un silencio muy pesado en la casa hoy.",
+                    "No vayas muy lejos. Las calles están... demasiado vacías."
+                ] 
+            }
+        ],
+        objetos: []
+    },
+    {
+        nombre: "Pino Montano (Calle)",
+        bg: "#2f3640",
+        imagenSrc: "images/pinoloco.png", // <-- PON AQUÍ TU IMAGEN
+        tipo: "jugable",
+        inicio: { x: 50, y: 300 },
+        salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
+        muebles: [ { x: 300, y: 100, w: 40, h: 40, color: "rgba(241, 196, 15, 0.5)" }, { x: 600, y: 450, w: 40, h: 40, color: "rgba(241, 196, 15, 0.5)" } ],
+        npcs: [
+            { 
+                x: 300, y: 300, w: 40, h: 40, color: "#8e44ad", nombre: "Akuma", 
+                dialogo: [
+                    "(Cantando la misma nota sostenida, una y otra vez sin respirar)...", 
+                    "Lara, mi amor... mi voz no hace eco en esta calle. Siento que llevo horas cantando y el aire no se mueve."
+                ] 
+            },
+            { 
+                x: 360, y: 300, w: 40, h: 40, color: "#34495e", nombre: "Dai", 
+                dialogo: [
+                    "L-Lara... acércate despacio. ¿Escuchas la radio?",
+                    "No hay emisoras. Solo capta un sonido hueco. Como si no hubiera nadie transmitiendo desde el otro lado de la ciudad.",
+                    "Tu mariposa era especial. Era lo único vibrante aquí. Mira a Lucky cómo tiembla, él también lo sabe.",
+                    "Hay un tren en Santa Justa. Creo que deberías ir a investigar."
+                ] 
+            }
+        ],
+        objetos: []
+    },
+    {
+        nombre: "Autobús TUSSAM (Cinemática)",
+        bg: "#111",
+        imagenSrc: "", // En cinemáticas suele ir negro, pero puedes poner imagen si quieres
+        tipo: "cinematica",
+        texto: "El autobús avanza sin emitir ruido de motor.\nLos pasajeros miran al frente. Ninguno parpadea.\nLucky gruñe en voz baja a una mujer que mira fijamente a la nada.",
+        duracion: 6
+    },
+    {
+        nombre: "Exterior Santa Justa",
+        bg: "#1a1a1a",
+        imagenSrc: "images/santajustaext.png", // <-- PON AQUÍ TU IMAGEN
+        tipo: "jugable",
+        inicio: { x: 50, y: 300 },
+        salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
+        muebles: [],
+        npcs: [
+            { 
+                x: 400, y: 300, w: 40, h: 40, color: "#e74c3c", nombre: "Gitanillo", 
+                dialogo: [
+                    "Eh, niña. Dame un euro, ¿no?",
+                    {
+                        texto: "¿Le das un euro?",
+                        opciones: [
+                            { texto: "Sí, ten un euro.", siguiente: 2 },
+                            { texto: "No tengo suelto ahora mismo.", siguiente: 3 }
+                        ]
+                    },
+                    "Gracias. Ten cuidado ahí dentro... la gente entra a la estación, pero sus sombras se quedan fuera. (Fin)",
+                    "Pues tú sabrás. Se nota en el aire. El que entra ahí no vuelve a ser el mismo. (Fin)"
+                ] 
+            }
+        ],
+        objetos: []
+    },
+    {
+        nombre: "Interior Santa Justa (Andenes)",
+        bg: "#222222",
+        imagenSrc: "images/santajustaint.png", // <-- PON AQUÍ TU IMAGEN
+        tipo: "jugable",
+        inicio: { x: 50, y: 300 },
+        salida: { x: 750, y: 250, w: 50, h: 100, color: "#e67e22" },
+        muebles: [ { x: 0, y: 100, w: 800, h: 50, color: "rgba(85, 85, 85, 0.5)" } ],
+        npcs: [
+            { 
+                x: 200, y: 200, w: 40, h: 40, color: "#95a5a6", nombre: "Morillo", 
+                dialogo: ["Llevo esperando el tren de las 9:24 desde ayer. Te juro que he visto el sol salir dos veces, pero el reloj sigue igual."] 
+            },
+            { 
+                x: 500, y: 400, w: 40, h: 40, color: "#e84393", nombre: "La Missyaoi", 
+                dialogo: ["El aire pesa muchísimo en este andén. Mira mi pelo, ni siquiera se mueve con el viento del túnel."] 
+            }
+        ],
+        objetos: [
+            { x: 100, y: 500, w: 15, h: 15, color: "white", nombre: "Billete Antiguo", recogido: false, texto: "Un billete de tren. Está fechado hace 10 años, pero parece recién impreso." }
+        ]
+    },
+    {
+        nombre: "Interior del Tren",
+        bg: "#2c3e50",
+        imagenSrc: "images/tren.png", // <-- PON AQUÍ TU IMAGEN
+        tipo: "jugable",
+        inicio: { x: 50, y: 300 },
+        salida: null, 
+        muebles: [
+            { x: 100, y: 150, w: 100, h: 50, color: "rgba(52, 73, 94, 0.5)" },
+            { x: 300, y: 150, w: 100, h: 50, color: "rgba(52, 73, 94, 0.5)" },
+            { x: 500, y: 150, w: 100, h: 50, color: "rgba(52, 73, 94, 0.5)" }
+        ],
+        npcs: [
+            { 
+                x: 650, y: 250, w: 40, h: 40, color: "#bdc3c7", nombre: "Revisor", 
+                dialogo: [
+                    "Lara nota que el tren está en silencio total. No hay vibración del motor sobre las vías.",
+                    "Billete, por favor. ¿Viaja usted con su billete validado?",
+                    {
+                        texto: "¿Tienes billete?",
+                        opciones: [
+                            { texto: "Sí, aquí tiene.", accion: "pasar_tren" },
+                            { texto: "No lo encuentro...", siguiente: 3 }
+                        ]
+                    },
+                    "Escúcheme bien. Viajar sin billete significa vagar por los andenes sin llegar nunca a su destino.",
+                    "Pero hoy... hoy todo está del revés. Puede quedarse. Total, parece que las vías se han vuelto infinitas hoy. (Fin)"
+                ] 
+            }
+        ],
+        objetos: []
+    },
+    {
+        nombre: "Estación de Los Rosales",
+        bg: "#1a1a1a",
+        imagenSrc: "", // <-- PON AQUÍ TU IMAGEN
+        tipo: "jugable",
+        inicio: { x: 50, y: 300 },
+        salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
+        muebles: [ { x: 380, y: 280, w: 40, h: 40, color: "rgba(211, 84, 0, 0.5)" } ],
+        npcs: [
+            { 
+                x: 430, y: 300, w: 40, h: 40, color: "#7f8c8d", nombre: "Yonki", 
+                dialogo: [
+                    "Jeje... acércate al fuego, niña. Es lo único que da calor real en este barrio frío.", 
+                    "Yuso y Guille llevan días sin salir. Dicen que han visto algo extraño al fondo de su cuarto."
+                ] 
+            }
+        ],
+        objetos: []
+    },
+    {
+        nombre: "Casa de Yuso (Entrada)",
+        bg: "#2b2b2b",
+        imagenSrc: "", // <-- PON AQUÍ TU IMAGEN
+        tipo: "jugable",
+        inicio: { x: 50, y: 300 },
+        salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
+        muebles: [],
+        npcs: [
+            { 
+                x: 400, y: 200, w: 40, h: 40, color: "#c0392b", nombre: "Madre Yuso (Reyes)", 
+                dialogo: [
+                    "Lara... qué bien que vienes. Guille y Yuso llevan horas callados en la habitación.",
+                    "He intentado abrir, pero hace muchísimo frío al tocar el pomo. Me da escalofríos. Pasa tú, por favor."
+                ] 
+            }
+        ],
+        objetos: []
+    },
+   {
+        nombre: "Cuarto de Yuso",
+        bg: "#111", 
+        imagenSrc: "images/cuarto_yuso_fondo.jpg", // <--- Asegúrate de que el nombre sea correcto
+        tipo: "jugable",
+        inicio: { x: 50, y: 300 },
+        salida: null, 
+        muebles: [
+            { x: 300, y: 50, w: 200, h: 100, color: "rgba(0,0,0,0.8)", nombre: "Rincón Oscuro" }
+        ],
+        npcs: [
+            { 
+                x: 120, y: 200, w: 80, h: 120, color: "#3498db", nombre: "Yuso", 
+                imagenSrc: "images/yuso.png", 
+                dialogo: [
+                    "Pasa, Lara. Siéntate si quieres. ¿Te has fijado en que hoy no ha amanecido?", 
+                    "Todo está paralizado. La gente, la brisa, el polvo en el aire. Tu mariposa era la única chispa que nos quedaba.",
+                    "Pero ha desaparecido. Y con ella, siento que el mundo se está quedando dormido para siempre."
+                ] 
+            },
+            { 
+                x: 280, y: 200, w: 80, h: 120, color: "#e67e22", nombre: "Guille", 
+                imagenSrc: "images/guille.png",
+                dialogo: [
+                    "Lucky es el único que parece entenderlo. Mírale. Le ladra a cosas que nosotros no logramos ver.",
+                    "No te vayas, Lara. Quédate aquí. Al menos en la quietud no pasa nada malo."
+                ] 
+            },
+            { 
+                x: 450, y: 400, w: 40, h: 40, color: "#d35400", nombre: "Lucky (El Perro)", 
+                dialogo: [
+                    "¡GUAU! ¡GUAU! (Lucky gimotea y rasca el suelo con fuerza, como si intentara cavar una salida hacia un lugar donde el tiempo fluya con normalidad).",
+                    "La habitación se queda en un silencio absoluto... (Fin de la historia)."
+                ] 
+            }
+        ],
+        objetos: []
+    }
+];
+
+
+// =======================================================
+// PRECARGA DE IMÁGENES (FONDOS Y NPCs)
+// =======================================================
+escenarios.forEach(nivel => {
+    // Cargar fondo del nivel
+    if (nivel.imagenSrc && nivel.imagenSrc !== "") {
+        nivel.objImagen = new Image();
+        nivel.objImagen.src = nivel.imagenSrc;
+    }
+    // Cargar imágenes de NPCs
+    if (nivel.npcs) {
+        nivel.npcs.forEach(npc => {
+            if (npc.imagenSrc && npc.imagenSrc !== "") {
+                npc.objImagen = new Image();
+                npc.objImagen.src = npc.imagenSrc;
+            }
+        });
+    }
+});
+
+// Precarga de Lara (Jugador)
+jugador.imagen = new Image();
+jugador.imagen.src = "images/lara.png";
+
+let nivelActual = 0;
+
+// =======================================================
+// FUNCIONES DE CONTROL DE DIÁLOGO
+// =======================================================
+
+function cargarNivel(indice) {
+    if (indice >= escenarios.length) return;
+    nivelActual = indice;
+    const nivel = escenarios[nivelActual];
+    document.querySelector("h2").innerText = `La Mariposa Perdida - ${nivel.nombre}`;
+    
+    if (nivel.tipo === "jugable") {
+        jugador.x = nivel.inicio.x;
+        jugador.y = nivel.inicio.y;
+        estadoJuego = "JUGANDO";
+        lucky.x = jugador.x - 30;
+        lucky.y = jugador.y + 20;
+
+    } else if (nivel.tipo === "cinematica") {
+        estadoJuego = "CINEMATICA";
+        tiempoCinematica = nivel.duracion * 60;
+    }
+}
+
+function hayColision(rect1, rect2) {
+    return (
+        rect1.x < rect2.x + rect2.w &&
+        rect1.x + rect1.w > rect2.x &&
+        rect1.y < rect2.y + rect2.h &&
+        rect1.y + rect1.h > rect2.y
+    );
+}
+
+function intentarMovimiento(nuevaX, nuevaY) {
+    const nivel = escenarios[nivelActual];
+    const hitboxJugador = { x: nuevaX, y: nuevaY, w: jugador.w, h: jugador.h };
+    if (nuevaX < 0 || nuevaX + jugador.w > canvas.width || nuevaY < 0 || nuevaY + jugador.h > canvas.height) return false;
+    for (let mueble of nivel.muebles) { if (hayColision(hitboxJugador, mueble)) return false; }
+    for (let npc of nivel.npcs) { if (hayColision(hitboxJugador, npc)) return false; }
+    return true;
+}
+
+function avanzarDialogo() {
+    let nodoActual = npcActual.dialogo[indiceDialogo];
+    
+    if (typeof nodoActual === "string" && nodoActual.includes("(Fin)")) {
+        cerrarDialogo();
+        return;
+    }
+
+    indiceDialogo++;
+    
+    if (indiceDialogo >= npcActual.dialogo.length) {
+        cerrarDialogo();
+        return;
+    }
+
+    let siguienteNodo = npcActual.dialogo[indiceDialogo];
+
+    if (typeof siguienteNodo === "string") {
+        textoDialogo.innerHTML = siguienteNodo;
+        enOpciones = false;
+    } else {
+        enOpciones = true;
+        opcionSeleccionada = 0;
+        dibujarOpciones(siguienteNodo);
+    }
+}
+
+function cerrarDialogo() {
+    enDialogo = false;
+    enOpciones = false;
+    cajaDialogo.style.display = "none";
+    npcActual = null;
+}
+
+function ejecutarOpcion(opcion) {
+    if (opcion.accion === "pasar_tren") {
+        cerrarDialogo();
+        cargarNivel(nivelActual + 1); 
+    } else if (opcion.siguiente !== undefined) {
+        indiceDialogo = opcion.siguiente;
+        let nodoDestino = npcActual.dialogo[indiceDialogo];
+        
+        if (typeof nodoDestino === "string") {
+            textoDialogo.innerHTML = nodoDestino;
+            enOpciones = false;
+        } else {
+            enOpciones = true;
+            opcionSeleccionada = 0;
+            dibujarOpciones(nodoDestino);
+        }
+    } else {
+        cerrarDialogo();
+    }
+}
+
+function dibujarOpciones(nodoOpciones) {
+    let html = `<p>${nodoOpciones.texto}</p><ul style="list-style:none; padding:0; margin-top:10px;">`;
+    for (let i = 0; i < nodoOpciones.opciones.length; i++) {
+        let opc = nodoOpciones.opciones[i];
+        if (i === opcionSeleccionada) {
+            html += `<li style="color:#ffdd57;">► ${opc.texto}</li>`;
+        } else {
+            html += `<li style="color:#fff;">  ${opc.texto}</li>`;
+        }
+    }
+    html += "</ul>";
+    textoDialogo.innerHTML = html;
+}
+
+// =======================================================
+// BUCLE PRINCIPAL Y LÓGICA DE ACTUALIZACIÓN
+// =======================================================
+
+function actualizar() {
+    if (estadoJuego === "MENU") {
+        if (teclas["ArrowUp"] || teclas["w"]) opcionMenu = 0;
+        if (teclas["ArrowDown"] || teclas["s"]) opcionMenu = 1;
+        
+        if (teclas[" "] && !teclaEspacioPulsada) {
+            teclaEspacioPulsada = true;
+            if (opcionMenu === 0) {
+                estadoJuego = "INTRO";
+                tiempoIntro = 360; 
+            } else {
+                alert("Las calles de Sevilla están vacías. No hay adónde salir.");
+                opcionMenu = 0; 
+            }
+        } else if (!teclas[" "]) {
+            teclaEspacioPulsada = false;
+        }
+        return;
+    }
+
+    if (estadoJuego === "INTRO") {
+        tiempoIntro--;
+        if (tiempoIntro <= 0 || (teclas[" "] && !teclaEspacioPulsada)) {
+            teclaEspacioPulsada = true;
+            cargarNivel(0);
+        } else if (!teclas[" "]) {
+            teclaEspacioPulsada = false;
+        }
+        return;
+    }
+
+    if (estadoJuego === "CINEMATICA") {
+        tiempoCinematica--;
+        if (tiempoCinematica <= 0) cargarNivel(nivelActual + 1);
+        return;
+    }
+
+    if (estadoJuego === "JUGANDO") {
+        const nivel = escenarios[nivelActual];
+
+        if (enDialogo) {
+            if (enOpciones) {
+                let nodoOpciones = npcActual.dialogo[indiceDialogo];
+                if ((teclas["ArrowUp"] || teclas["w"]) && !teclaEspacioPulsada) {
+                    teclaEspacioPulsada = true;
+                    opcionSeleccionada = Math.max(0, opcionSeleccionada - 1);
+                    dibujarOpciones(nodoOpciones);
+                } else if ((teclas["ArrowDown"] || teclas["s"]) && !teclaEspacioPulsada) {
+                    teclaEspacioPulsada = true;
+                    opcionSeleccionada = Math.min(nodoOpciones.opciones.length - 1, opcionSeleccionada + 1);
+                    dibujarOpciones(nodoOpciones);
+                } else if (teclas[" "] && !teclaEspacioPulsada) {
+                    teclaEspacioPulsada = true;
+                    ejecutarOpcion(nodoOpciones.opciones[opcionSeleccionada]);
+                } else if (!teclas["ArrowUp"] && !teclas["ArrowDown"] && !teclas[" "]) {
+                    teclaEspacioPulsada = false;
+                }
+            } else {
+                if (teclas[" "] && !teclaEspacioPulsada) {
+                    teclaEspacioPulsada = true;
+                    avanzarDialogo();
+                } else if (!teclas[" "]) {
+                    teclaEspacioPulsada = false;
+                }
+            }
+            return; 
+        }
+
+        let dx = 0; let dy = 0;
+        if (teclas["ArrowUp"] || teclas["w"]) dy -= jugador.velocidad;
+        if (teclas["ArrowDown"] || teclas["s"]) dy += jugador.velocidad;
+        if (teclas["ArrowLeft"] || teclas["a"]) dx -= jugador.velocidad;
+        if (teclas["ArrowRight"] || teclas["d"]) dx += jugador.velocidad;
+
+        if (dx !== 0 && intentarMovimiento(jugador.x + dx, jugador.y)) jugador.x += dx;
+        if (dy !== 0 && intentarMovimiento(jugador.x, jugador.y + dy)) jugador.y += dy;
+
+        if (lucky.activo) {
+            let dxLucky = jugador.x - lucky.x;
+            let dyLucky = jugador.y - lucky.y;
+            let dist = Math.sqrt(dxLucky*dxLucky + dyLucky*dyLucky);
+            
+            if (dist > 60) {
+                lucky.x += (dxLucky / dist) * (jugador.velocidad * 0.8);
+                lucky.y += (dyLucky / dist) * (jugador.velocidad * 0.8);
+            } else if (Math.random() < 0.01) {
+                lucky.x += (Math.random() - 0.5) * 10;
+                lucky.y += (Math.random() - 0.5) * 10;
+            }
+        }
+
+        if (nivel.salida && hayColision(jugador, nivel.salida)) {
+            cargarNivel(nivelActual + 1);
+            return;
+        }
+
+        if (teclas[" "] && !teclaEspacioPulsada) {
+            teclaEspacioPulsada = true;
+            const zonaInteraccion = { x: jugador.x - 20, y: jugador.y - 20, w: jugador.w + 40, h: jugador.h + 40 };
+
+            for (let npc of nivel.npcs) {
+                if (hayColision(zonaInteraccion, npc)) {
+                    enDialogo = true;
+                    npcActual = npc;
+                    indiceDialogo = 0;
+                    cajaDialogo.style.display = "block";
+                    nombreDialogo.innerText = npc.nombre;
+                    
+                    let primerNodo = npc.dialogo[0];
+                    if (typeof primerNodo === "string") {
+                        textoDialogo.innerHTML = primerNodo;
+                        enOpciones = false;
+                    } else {
+                        enOpciones = true;
+                        opcionSeleccionada = 0;
+                        dibujarOpciones(primerNodo);
+                    }
+                    return;
+                }
+            }
+
+            if (nivel.objetos) {
+                for (let obj of nivel.objetos) {
+                    if (!obj.recogido && hayColision(zonaInteraccion, obj)) {
+                        obj.recogido = true;
+                        enDialogo = true;
+                        npcActual = { nombre: "Has encontrado algo...", dialogo: [`${obj.nombre}`, obj.texto, "(Fin)"] };
+                        indiceDialogo = 0;
+                        cajaDialogo.style.display = "block";
+                        nombreDialogo.innerText = npcActual.nombre;
+                        textoDialogo.innerHTML = npcActual.dialogo[0];
+                        return;
+                    }
+                }
+            }
+        } else if (!teclas[" "]) {
+            teclaEspacioPulsada = false;
+        }
+    }
+}
+
+// =======================================================
+// RENDERIZADO (DIBUJO)
+// =======================================================
+
+// =======================================================
+// RENDERIZADO (DIBUJO)
+// =======================================================
+
+function dibujar() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (estadoJuego === "MENU") {
+        ctx.fillStyle = "#0d1117";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "#bdc3c7";
+        ctx.font = "bold 40px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("LA MARIPOSA PERDIDA", canvas.width/2, 200);
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "#7f8c8d";
+        ctx.fillText("El silencio de Pino Montano", canvas.width/2, 240);
+        
+        ctx.fillStyle = "white";
+        ctx.font = "24px Arial";
+        ctx.fillText((opcionMenu === 0 ? "► " : "") + "INICIAR HISTORIA", canvas.width/2, 350);
+        ctx.fillText((opcionMenu === 1 ? "► " : "") + "SALIR", canvas.width/2, 400);
+        
+        ctx.textAlign = "left"; 
+        return;
+    }
+
+    if (estadoJuego === "INTRO") {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "#fff";
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("A veces, el mundo parece quedarse sin aliento.", canvas.width/2, 250);
+        ctx.fillText("Lucky lleva horas ladrando a una esquina vacía de la habitación.", canvas.width/2, 290);
+        ctx.fillText("Algo falta. Algo ha desaparecido.", canvas.width/2, 330);
+        
+        ctx.fillStyle = "#555";
+        ctx.font = "14px Arial";
+        ctx.fillText("[Cargando historia...]", canvas.width/2, 550);
+        ctx.textAlign = "left";
+        return;
+    }
+
+    const nivel = escenarios[nivelActual];
+
+    // 1. DIBUJAR EL FONDO
+    if (nivel.objImagen && nivel.objImagen.complete && nivel.objImagen.naturalWidth !== 0) {
+        ctx.drawImage(nivel.objImagen, 0, 0, canvas.width, canvas.height);
+    } else {
+        ctx.fillStyle = nivel.bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    if (estadoJuego === "CINEMATICA") {
+        ctx.fillStyle = "white";
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        let lineas = nivel.texto.split('\n');
+        for (let i=0; i<lineas.length; i++) {
+            ctx.fillText(lineas[i], canvas.width/2, 250 + (i * 30));
+        }
+        ctx.fillStyle = "#7f8c8d";
+        ctx.fillText(`Llegando a la parada: ${Math.ceil(tiempoCinematica/60)}s`, canvas.width/2, 450);
+        ctx.textAlign = "left";
+        return;
+    }
+
+    // 2. DIBUJAR SALIDA Y MUEBLES
+    if (nivel.salida) {
+        ctx.fillStyle = nivel.salida.color;
+        ctx.fillRect(nivel.salida.x, nivel.salida.y, nivel.salida.w, nivel.salida.h);
+    }
+
+    for (let mueble of nivel.muebles) {
+        ctx.fillStyle = mueble.color;
+        ctx.fillRect(mueble.x, mueble.y, mueble.w, mueble.h);
+    }
+
+    // 3. DIBUJAR OBJETOS RECOGIBLES
+    if (nivel.objetos) {
+        for (let obj of nivel.objetos) {
+            if (!obj.recogido) {
+                ctx.fillStyle = obj.color;
+                ctx.beginPath();
+                ctx.arc(obj.x + obj.w/2, obj.y + obj.h/2, obj.w/2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+
+  // 4. DIBUJAR NPCs
+    for (let npc of nivel.npcs) {
+        if (npc.objImagen && npc.objImagen.complete) {
+            ctx.drawImage(npc.objImagen, npc.x, npc.y, npc.w, npc.h);
+        } else {
+            ctx.fillStyle = npc.color;
+            ctx.fillRect(npc.x, npc.y, npc.w, npc.h);
+        }
+        ctx.fillStyle = "white";
+        ctx.font = "14px Arial";
+        ctx.fillText(npc.nombre, npc.x, npc.y - 5);
+    }
+
+    // 5. DIBUJAR A LARA
+    if (jugador.imagen && jugador.imagen.complete) {
+        ctx.drawImage(jugador.imagen, jugador.x, jugador.y, jugador.w, jugador.h);
+    } else {
+        ctx.fillStyle = jugador.color;
+        ctx.fillRect(jugador.x, jugador.y, jugador.w, jugador.h);
+    }
+    if (lucky.activo) {
+        ctx.fillStyle = lucky.color;
+        ctx.fillRect(lucky.x, lucky.y, lucky.w, lucky.h);
+        ctx.fillStyle = "white";
+        ctx.font = "12px Arial";
+        ctx.fillText("Lucky", lucky.x - 5, lucky.y - 5);
+    }
+
+    // 5. DIBUJAR A LARA (¡Al final del todo para que quede por encima!)
+    if (jugador.imagen.complete && jugador.imagen.naturalWidth !== 0) {
+        // Si la imagen carga bien, la dibuja
+        ctx.drawImage(jugador.imagen, jugador.x, jugador.y, jugador.w, jugador.h);
+    } else {
+        // Si no encuentra la imagen, dibuja el cuadrado rosa
+        ctx.fillStyle = jugador.color;
+        ctx.fillRect(jugador.x, jugador.y, jugador.w, jugador.h);
+    }
+    
+    // Le dejamos el nombre encima
+    ctx.fillStyle = "white";
+    ctx.font = "14px Arial";
+    ctx.fillText("Lara", jugador.x, jugador.y - 5);
+}
+
+function gameLoop() {
+    actualizar();
+    dibujar();
+    requestAnimationFrame(gameLoop);
+}
+
+// INICIAR EL BUCLE
+gameLoop();
