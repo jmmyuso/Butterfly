@@ -24,7 +24,10 @@ let teclaBackPulsada = false; // nueva bandera para evitar repetición con Backs
 // ENTIDADES GLOBALES
 let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 3, imagen: new Image() }; // velocidad reducida (antes 5)
 jugador.imagen.src = "images/lara.png"; // <--- Aquí pones el nombre de tu imagen
-let lucky = { x: 30, y: 320, w: 20, h: 20, color: "#d35400", nombre: "Lucky", activo: true };
+
+// Reemplazado: Lucky ahora tiene una imagen y tamaño mayor
+let lucky = { x: 30, y: 320, w: 120, h: 120, color: "#d35400", nombre: "Lucky", activo: true, imagen: new Image() };
+lucky.imagen.src = "images/lucky.png";
 
 // SISTEMA DE DIÁLOGO AVANZADO
 let npcActual = null;
@@ -97,7 +100,8 @@ const escenarios = [
                 ] 
             },
             { 
-                x: 360, y: 300, w: 40, h: 40, color: "#34495e", nombre: "Dai", 
+                x: 360, y: 300, w: jugador.w, h: jugador.h, color: "#34495e", nombre: "Dai", 
+                imagenSrc: "images/dai.png",
                 dialogo: [
                     "L-Lara... acércate despacio. ¿Escuchas la radio?",
                     "No hay emisoras. Solo capta un sonido hueco. Como si no hubiera nadie transmitiendo desde el otro lado de la ciudad.",
@@ -111,7 +115,7 @@ const escenarios = [
     {
         nombre: "Autobús TUSSAM (Cinemática)",
         bg: "#111",
-        imagenSrc: "", // En cinemáticas suele ir negro, pero puedes poner imagen si quieres
+        imagenSrc: "images/autobuscinema.png", // imagen cinematica corregida
         tipo: "cinematica",
         texto: "El autobús avanza sin emitir ruido de motor.\nLos pasajeros miran al frente. Ninguno parpadea.\nLucky gruñe en voz baja a una mujer que mira fijamente a la nada.",
         duracion: 6
@@ -120,9 +124,11 @@ const escenarios = [
         nombre: "Exterior Santa Justa",
         bg: "#1a1a1a",
         imagenSrc: "images/santajustaext.png", // <-- PON AQUÍ TU IMAGEN
+        maskSrc: "images/santajusta_mask.png", // imagen máscara: paredes/obstáculos en negro
         tipo: "jugable",
         inicio: { x: 50, y: 300 },
-        salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
+        // SALIDA situada en la puerta visible en el fondo (ajusta X/Y/W/H si hace falta)
+        salida: { x: 520, y: 140, w: 120, h: 220, color: "#2ecc71" },
         entrada: { x: 0, y: 250, w: 50, h: 100, color: "#e74c3c" }, // ejemplo: colisiona a la izquierda para volver atrás
         muebles: [],
         npcs: [
@@ -154,7 +160,8 @@ const escenarios = [
         muebles: [ { x: 0, y: 100, w: 800, h: 50, color: "rgba(85, 85, 85, 0.5)" } ],
         npcs: [
             { 
-                x: 200, y: 200, w: 40, h: 40, color: "#95a5a6", nombre: "Morillo", 
+                x: 200, y: 200, w: jugador.w, h: jugador.h, color: "#95a5a6", nombre: "Morillo",
+                imagenSrc: "images/morillo.png",
                 dialogo: ["Llevo esperando el tren de las 9:24 desde ayer. Te juro que he visto el sol salir dos veces, pero el reloj sigue igual."] 
             },
             { 
@@ -240,6 +247,7 @@ const escenarios = [
         nombre: "Cuarto de Yuso",
         bg: "#111", 
         imagenSrc: "images/cuarto.png", // <-- cambia a tu archivo cuarto.png
+        maskSrc: "images/cuarto_mask.png", // máscara para paredes del cuarto
         tipo: "jugable",
         inicio: { x: 50, y: 300 },
         salida: null, 
@@ -288,6 +296,9 @@ escenarios.forEach(nivel => {
         nivel.objImagen.onerror = () => { console.warn("No se pudo cargar fondo:", nivel.imagenSrc); nivel.imagenCargada = false; };
         nivel.objImagen.src = nivel.imagenSrc;
     }
+    // Por defecto las puertas/entradas son invisibles en el render; usa salidaVisible/entradaVisible = true para mostrarlas
+    if (nivel.salida && nivel.salidaVisible === undefined) nivel.salidaVisible = false;
+    if (nivel.entrada && nivel.entradaVisible === undefined) nivel.entradaVisible = false;
     // Cargar imágenes de NPCs y normalizar propiedades por defecto
     if (nivel.npcs) {
         nivel.npcs.forEach(npc => {
@@ -545,14 +556,26 @@ function actualizar() {
             return; 
         }
 
-        let dx = 0; let dy = 0;
-        if (teclas["ArrowUp"] || teclas["w"]) dy -= jugador.velocidad;
-        if (teclas["ArrowDown"] || teclas["s"]) dy += jugador.velocidad;
-        if (teclas["ArrowLeft"] || teclas["a"]) dx -= jugador.velocidad;
-        if (teclas["ArrowRight"] || teclas["d"]) dx += jugador.velocidad;
+        // MOVIMIENTO: ahora probamos movimiento combinado primero (diagonal) para evitar quedar clavado
+        if (jugador.controlable !== false) {
+            let dx = 0; let dy = 0;
+            if (teclas["ArrowUp"] || teclas["w"]) dy -= jugador.velocidad;
+            if (teclas["ArrowDown"] || teclas["s"]) dy += jugador.velocidad;
+            if (teclas["ArrowLeft"] || teclas["a"]) dx -= jugador.velocidad;
+            if (teclas["ArrowRight"] || teclas["d"]) dx += jugador.velocidad;
 
-        if (dx !== 0 && intentarMovimiento(jugador.x + dx, jugador.y)) jugador.x += dx;
-        if (dy !== 0 && intentarMovimiento(jugador.x, jugador.y + dy)) jugador.y += dy;
+            if (dx !== 0 || dy !== 0) {
+                // intentar movimiento combinado
+                if (intentarMovimiento(jugador.x + dx, jugador.y + dy)) {
+                    jugador.x += dx;
+                    jugador.y += dy;
+                } else {
+                    // intentar por ejes separados (suaviza colisiones contra esquinas)
+                    if (dx !== 0 && intentarMovimiento(jugador.x + dx, jugador.y)) jugador.x += dx;
+                    if (dy !== 0 && intentarMovimiento(jugador.x, jugador.y + dy)) jugador.y += dy;
+                }
+            }
+        }
 
         if (lucky.activo) {
             let dxLucky = jugador.x - lucky.x;
@@ -743,12 +766,13 @@ function dibujar() {
     }
 
     // 2. DIBUJAR SALIDA Y MUEBLES
-    if (nivel.salida) {
+    // Si salidaVisible está activada se dibuja (por defecto está oculta)
+    if (nivel.salida && nivel.salidaVisible) {
         ctx.fillStyle = nivel.salida.color;
         ctx.fillRect(nivel.salida.x, nivel.salida.y, nivel.salida.w, nivel.salida.h);
     }
-    // Dibujar entrada (si existe) para volver al escenario anterior
-    if (nivel.entrada) {
+    // Dibujar entrada (si existe y está marcada como visible)
+    if (nivel.entrada && nivel.entradaVisible) {
         ctx.fillStyle = nivel.entrada.color || "#e74c3c";
         ctx.fillRect(nivel.entrada.x, nivel.entrada.y, nivel.entrada.w, nivel.entrada.h);
     }
@@ -791,8 +815,13 @@ function dibujar() {
         ctx.fillRect(jugador.x, jugador.y, jugador.w, jugador.h);
     }
     if (lucky.activo) {
-        ctx.fillStyle = lucky.color;
-        ctx.fillRect(lucky.x, lucky.y, lucky.w, lucky.h);
+        // Si la imagen de Lucky está cargada, dibujarla; si no, usar el cuadrado de color como fallback
+        if (lucky.imagen && lucky.imagen.complete && lucky.imagen.naturalWidth !== 0) {
+            ctx.drawImage(lucky.imagen, lucky.x, lucky.y, lucky.w, lucky.h);
+        } else {
+            ctx.fillStyle = lucky.color;
+            ctx.fillRect(lucky.x, lucky.y, lucky.w, lucky.h);
+        }
         ctx.fillStyle = "white";
         ctx.font = "12px Arial";
         ctx.fillText("Lucky", lucky.x - 5, lucky.y - 5);
