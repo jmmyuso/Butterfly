@@ -200,22 +200,26 @@ const escenarios = [
             { x: 500, y: 150, w: 100, h: 50, color: "rgba(52, 73, 94, 0.5)" }
         ],
         npcs: [
-            { 
-                x: 650, y: 250, w: 40, h: 40, color: "#bdc3c7", nombre: "Revisor", 
-                dialogo: [
-                    "Lara nota que el tren está en silencio total. No hay vibración del motor sobre las vías.",
-                    "Billete, por favor. ¿Viaja usted con su billete validado?",
-                    {
-                        texto: "¿Tienes billete?",
-                        opciones: [
-                            { texto: "Sí, aquí tiene.", accion: "pasar_tren" },
-                            { texto: "No lo encuentro...", siguiente: 3 }
-                        ]
-                    },
-                    "Escúcheme bien. Viajar sin billete significa vagar por los andenes sin llegar nunca a su destino.",
-                    "Pero hoy... hoy todo está del revés. Puede quedarse. Total, parece que las vías se han vuelto infinitas hoy. (Fin)"
-                ] 
-            }
+          { 
+    x: 650, y: 300, 
+    w: 80, h: 120, 
+    color: "#bdc3c7", 
+    nombre: "Revisor", 
+    imagenSrc: "images/revisor.png",
+    dialogo: [
+        "Lara nota que el tren está en silencio total. No hay vibración del motor sobre las vías.",
+        "Billete, por favor. ¿Viaja usted con su billete validado?",
+        {
+            texto: "¿Tienes billete?",
+            opciones: [
+                { texto: "Sí, aquí tiene.", accion: "pasar_tren" }, // Esta acción debe estar definida en tu main.js
+                { texto: "No lo encuentro...", siguiente: 3 }
+            ]
+        },
+        "Escúcheme bien. Viajar sin billete significa vagar por los andenes sin llegar nunca a su destino.",
+        "Pero hoy... hoy todo está del revés. Puede quedarse. Total, parece que las vías se han vuelto infinitas hoy. (Fin)"
+    ] 
+}
         ],
         objetos: []
     },
@@ -248,12 +252,17 @@ const escenarios = [
         muebles: [],
         npcs: [
             { 
-                x: 400, y: 200, w: 40, h: 40, color: "#c0392b", nombre: "Madre Yuso (Reyes)", 
+                x: 400, y: 300, 
+                w: 80, h: 120, // Ajustado para que la imagen se vea proporcionada
+                color: "#c0392b", 
+                nombre: "Madre Yuso (Reyes)", 
+                imagenSrc: "images/madreyuso.png", // <--- Imagen añadida
                 dialogo: [
                     "Lara... qué bien que vienes. Guille y Yuso llevan horas callados en la habitación.",
                     "He intentado abrir, pero hace muchísimo frío al tocar el pomo. Me da escalofríos. Pasa tú, por favor."
                 ] 
             }
+           
         ],
         objetos: []
     },
