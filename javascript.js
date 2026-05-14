@@ -275,29 +275,7 @@ const escenarios = [
 ];
 
 
-// =======================================================
-// PRECARGA DE IMÁGENES (FONDOS Y NPCs)
-// =======================================================
-escenarios.forEach(nivel => {
-    // Cargar fondo del nivel
-    if (nivel.imagenSrc && nivel.imagenSrc !== "") {
-        nivel.objImagen = new Image();
-        nivel.objImagen.src = nivel.imagenSrc;
-    }
-    // Cargar imágenes de NPCs
-    if (nivel.npcs) {
-        nivel.npcs.forEach(npc => {
-            if (npc.imagenSrc && npc.imagenSrc !== "") {
-                npc.objImagen = new Image();
-                npc.objImagen.src = npc.imagenSrc;
-            }
-        });
-    }
-});
 
-// Precarga de Lara (Jugador)
-jugador.imagen = new Image();
-jugador.imagen.src = "images/lara.png";
 
 let nivelActual = 0;
 
@@ -653,26 +631,23 @@ function dibujar() {
         }
     }
 
-  // 4. DIBUJAR NPCs
+    // 4. DIBUJAR NPCs (¡Ahora con soporte para imágenes!)
     for (let npc of nivel.npcs) {
-        if (npc.objImagen && npc.objImagen.complete) {
+        // Si el NPC tiene foto, la dibuja
+        if (npc.objImagen && npc.objImagen.complete && npc.objImagen.naturalWidth !== 0) {
             ctx.drawImage(npc.objImagen, npc.x, npc.y, npc.w, npc.h);
         } else {
+            // Si no tiene foto, le pinta el cuadrado de color
             ctx.fillStyle = npc.color;
             ctx.fillRect(npc.x, npc.y, npc.w, npc.h);
         }
+        
+        // Poner el nombre encima
         ctx.fillStyle = "white";
         ctx.font = "14px Arial";
         ctx.fillText(npc.nombre, npc.x, npc.y - 5);
     }
 
-    // 5. DIBUJAR A LARA
-    if (jugador.imagen && jugador.imagen.complete) {
-        ctx.drawImage(jugador.imagen, jugador.x, jugador.y, jugador.w, jugador.h);
-    } else {
-        ctx.fillStyle = jugador.color;
-        ctx.fillRect(jugador.x, jugador.y, jugador.w, jugador.h);
-    }
     if (lucky.activo) {
         ctx.fillStyle = lucky.color;
         ctx.fillRect(lucky.x, lucky.y, lucky.w, lucky.h);
