@@ -22,7 +22,7 @@ let teclaEspacioPulsada = false;
 let teclaBackPulsada = false; // nueva bandera para evitar repetición con Backspace
 
 // ENTIDADES GLOBALES
-let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 1, imagen: new Image() }; // velocidad reducida (antes 5)
+let jugador = { x: 50, y: 300, w: 80, h: 120, color: "#ffb6c1", velocidad: 3, imagen: new Image() }; // velocidad reducida (antes 5)
 jugador.imagen.src = "images/lara.png"; // <--- Aquí pones el nombre de tu imagen
 
 // Reemplazado: Lucky ahora tiene una imagen y tamaño mayor
@@ -48,8 +48,20 @@ const escenarios = [
         inicio: { x: 50, y: 300 },
         salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
         muebles: [
-            { x: 50, y: 50, w: 200, h: 100, color: "rgba(44, 62, 80, 0.5)" },
-            { x: 500, y: 50, w: 100, h: 50, color: "rgba(52, 73, 94, 0.5)" }
+            // --- PARTE SUPERIOR (Simplificada como pediste antes) ---
+            { x: 0, y: 0, w: 20, h: 300, color: "rgba(0, 0, 0, 0)" }, 
+            { x: 0, y: 0, w: 320, h: 300, color: "rgba(o, 0, 0, 0)" }, 
+
+            // --- PARED DERECHA (Con 2 bloques más de grosor) ---
+            // He cambiado x de 790 a 740 y el ancho (w) a 60 para que sea más gruesa
+            { x: 740, y: 200, w: 60, h: 100, color: "rgba(0, 0, 0, 0)" }, 
+
+            // --- LÍMITE IZQUIERDO ---
+            { x: 0, y: 220, w: 80, h: 100, color: "rgba(0, 0, 0, 0.5)" },
+
+            // --- SUELO / PUERTA (Abajo) ---
+            { x: 0, y: 20, w: 200, h: 100, color: "rgba(0, 0, 0, 0.5)" }, 
+            { x: 0, y: 0, w: 0, h: 0, color: "rgba(0, 0, 0, 0)" }
         ],
         npcs: [
             { 
@@ -62,7 +74,7 @@ const escenarios = [
             }
         ],
         objetos: [
-            { x: 300, y: 400, w: 15, h: 15, color: "#95a5a6", nombre: "Reloj Parado", recogido: false, texto: "El segundero tiembla intentando avanzar, pero vuelve hacia atrás. El tiempo parece haberse estancado." }
+            { x: 100, y: 150, w: 15, h: 15, color: "#95a5a6", nombre: "ala de mariposa", recogido: false, texto: "Un ala de mariposa, me resulta familiar.... El tiempo parece haberse estancado." }
         ]
     },
     {
@@ -72,10 +84,10 @@ const escenarios = [
         tipo: "jugable",
         inicio: { x: 50, y: 300 },
         salida: { x: 750, y: 250, w: 50, h: 100, color: "#2ecc71" },
-        muebles: [ { x: 200, y: 400, w: 400, h: 50, color: "rgba(17, 17, 17, 0.5)" } ],
+        muebles: [ { x: 100, y: 200, w: 200, h: 50, color: "rgba(17, 17, 17, 0.5)" } ],
         npcs: [
            { 
-                x: 400, y: 250, 
+                x: 200, y: 250, 
                 w: 80, h: 120, // Aumentado para que se vea bien la imagen
                 color: "#b2bec3", 
                 nombre: "Mamá", 
@@ -107,18 +119,18 @@ const escenarios = [
                 nombre: "Akuma", 
                 imagenSrc: "images/akuma.png", 
                 dialogo: [
-                    "El aura de este lugar ha cambiado, Lara.",
-                    "La mariposa no se ha ido, ha sido consumida por el silencio."
+                    "Yo tengo la p.. tengo...",
+                    "¿Qué es lo que tengo?"
                 ] 
             },
             { 
                 x: 360, y: 300, w: jugador.w, h: jugador.h, color: "#34495e", nombre: "Dai", 
                 imagenSrc: "images/dai.png",
                 dialogo: [
-                    "L-Lara... acércate despacio. ¿Escuchas la radio?",
-                    "No hay emisoras. Solo capta un sonido hueco. Como si no hubiera nadie transmitiendo desde el otro lado de la ciudad.",
-                    "Tu mariposa era especial. Era lo único vibrante aquí. Mira a Lucky cómo tiembla, él también lo sabe.",
-                    "Hay un tren en Santa Justa. Creo que deberías ir a investigar."
+                    "Todo parece distinto hoy",
+                    "¿Lo sientes? Esta desesperanza",
+                    "Tu mariposa era especial. Era lo único vibrante aquí. Mira a Lucky cómo tiembla, él también lo siente.",
+                    "Ve adonde todos los mundos convergen en uno"
                 ] 
             }
         ],
@@ -129,7 +141,7 @@ const escenarios = [
         bg: "#111",
         imagenSrc: "images/autobuscinema.png", // imagen cinematica corregida
         tipo: "cinematica",
-        texto: "El autobús avanza sin emitir ruido de motor.\nLos pasajeros miran al frente. Ninguno parpadea.\nLucky gruñe en voz baja a una mujer que mira fijamente a la nada.",
+        texto: "El autobús avanza, pero no se siente movimiento alguno.\nLos pasajeros miran al frente. Ninguno parpadea.\nLucky gruñe en voz baja a una mujer que mira fijamente a la nada.",
         duracion: 6
     },
     {
@@ -180,7 +192,7 @@ const escenarios = [
                 color: "#e84393", 
                 nombre: "La Missyaoi", 
                 imagenSrc: "images/missyaoi.png", // <--- Vinculamos la imagen
-                dialogo: ["El aire pesa muchísimo en este andén. Mira mi pelo, ni siquiera se mueve con el viento del túnel."] 
+                dialogo: ["Mi pelo.. dios mio mi pelo.."] 
             }
         ],
         objetos: [
@@ -264,47 +276,65 @@ const escenarios = [
             }
            
         ],
+      // ... (final del escenario anterior)
         objetos: []
-    },
-   {
+    }, // <--- Esta coma separa el escenario anterior del nuevo
+    {
         nombre: "Cuarto de Yuso",
         bg: "#111", 
-        imagenSrc: "images/cuarto.png", // <-- cambia a tu archivo cuarto.png
-        maskSrc: "images/cuarto_mask.png", // máscara para paredes del cuarto
+        imagenSrc: "images/cuarto.png", 
         tipo: "jugable",
         inicio: { x: 50, y: 300 },
         salida: null, 
-        muebles: [
-            { x: 300, y: 50, w: 200, h: 100, color: "rgba(0,0,0,0.8)", nombre: "Rincón Oscuro" }
-        ],
+        muebles: [{ x: 300, y: 50, w: 200, h: 100, color: "rgba(0,0,0,0.8)" }],
         npcs: [
             { 
-                x: 120, y: 200, w: 80, h: 120, color: "#3498db", nombre: "Yuso", 
-                imagenSrc: "images/yuso.png", solido: false, 
-                dialogo: [
-                    "Pasa, Lara. Siéntate si quieres. ¿Te has fijado en que hoy no ha amanecido?", 
-                    "Todo está paralizado. La gente, la brisa, el polvo en el aire. Tu mariposa era la única chispa que nos quedaba.",
-                    "Pero ha desaparecido. Y con ella, siento que el mundo se está quedando dormido para siempre."
-                ] 
+                nombre: "Yuso", x: 120, y: 200, w: 80, h: 120, 
+                imagenSrc: "images/yuso.png", solido: false, seguir: true,
+                dialogo: ["¡Vamos allá!"] 
             },
             { 
-                x: 280, y: 200, w: 80, h: 120, color: "#e67e22", nombre: "Guille", 
-                imagenSrc: "images/guille.png", solido: false,
-                dialogo: [
-                    "Lucky es el único que parece entenderlo. Mírale. Le ladra a cosas que nosotros no logramos ver.",
-                    "No te vayas, Lara. Quédate aquí. Al menos en la quietud no pasa nada malo."
-                ] 
+                nombre: "Guille", x: 280, y: 200, w: 80, h: 120, 
+                imagenSrc: "images/guille.png", solido: false, seguir: true,
+                dialogo: ["Te seguimos, Lara."] 
             },
             { 
-                x: 450, y: 400, w: 40, h: 40, color: "#d35400", nombre: "Lucky (El Perro)", solido: false,
-                dialogo: [
-                    "¡GUAU! ¡GUAU! (Lucky gimotea y rasca el suelo con fuerza, como si intentara cavar una salida hacia un lugar donde el tiempo fluya con normalidad).",
-                    "La habitación se queda en un silencio absoluto... (Fin de la historia)."
-                ] 
+                nombre: "Homogatos", x: 680, y: 250, w: 80, h: 120, 
+                imagenSrc: "images/homogatos.png", solido: false,
+                dialogo: ["El corazón siempre sabe el camino."] 
+            },
+            { 
+                nombre: "Incienso", x: 450, y: 400, w: 40, h: 40, color: "#d35400", 
+                portal: true, solido: false,
+                dialogo: ["El aroma te envuelve..."] 
             }
         ],
         objetos: []
+    },
+    {
+        nombre: "Cinemática Embarka",
+        bg: "#000",
+        tipo: "cinematica",
+        texto: "Tu corazón se halla donde sonrió",
+        duracion: 4 
+    },
+    {
+        nombre: "embarkas",
+        bg: "#2980b9",
+        imagenSrc: "images/embarkas.png", 
+        tipo: "jugable",
+        inicio: { x: 400, y: 300 }, // Posición más centrada
+        salida: null,
+        muebles: [],
+        npcs: [
+            { nombre: "Yuso", x: 350, y: 350, w: 80, h: 120, imagenSrc: "images/yuso.png", solido: false, seguir: true },
+            { nombre: "Guille", x: 450, y: 350, w: 80, h: 120, imagenSrc: "images/guille.png", solido: false, seguir: true },
+            { nombre: "Lucky", x: 400, y: 380, w: 40, h: 40, imagenSrc: "images/lara.png", solido: false, seguir: true } 
+            // He puesto temporalmente images/lara.png para Lucky para evitar que falle si no tienes lucky.png
+        ],
+        objetos: []
     }
+
 ];
 
 // =======================================================
@@ -464,14 +494,25 @@ function cerrarDialogo() {
     enOpciones = false;
     cajaDialogo.style.display = "none";
 
-    // Si el diálogo que se cierra es de Guille, hacer que empiece a seguir a Lara
-    if (npcActual && npcActual.nombre === "Guille") {
-        npcActual.seguir = true;
+    // Si hay un NPC con el que estábamos hablando...
+    if (npcActual) {
+        
+        // 1. Acople de Guille (el que te sigue)
+        if (npcActual.nombre === "Guille") {
+            npcActual.seguir = true;
+        }
+
+        // 2. Acople del Portal (el Incienso)
+        // Aquí le decimos: "Si el NPC tiene la etiqueta 'portal', cámbiame de nivel"
+        if (npcActual.portal === true) { 
+            setTimeout(() => {
+                cargarNivel(nivelActual + 1); // Esto te lleva a la cinematica
+            }, 500); 
+        }
     }
 
     npcActual = null;
 }
-
 function ejecutarOpcion(opcion) {
     if (opcion.accion === "pasar_tren") {
         cerrarDialogo();
